@@ -2,7 +2,7 @@
   "name": "annuityCreditCalculator",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
     "dev": "ROLLUP_WATCH=true rollup -c --watch --configPlugin @rollup/plugin-typescript",
     "build": "rollup -c --configPlugin @rollup/plugin-typescript"
