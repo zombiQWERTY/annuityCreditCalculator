@@ -1,5 +1,5 @@
 var calc = (function () {
-  'use strict';
+  "use strict";
 
   const formatDistanceLocale = {
     lessThanXSeconds: {
@@ -214,11 +214,15 @@ var calc = (function () {
           args.formattingValues[width] || args.formattingValues[defaultWidth];
       } else {
         const defaultWidth = args.defaultWidth;
-        const width = options?.width ? String(options.width) : args.defaultWidth;
+        const width = options?.width
+          ? String(options.width)
+          : args.defaultWidth;
 
         valuesArray = args.values[width] || args.values[defaultWidth];
       }
-      const index = args.argumentCallback ? args.argumentCallback(value) : value;
+      const index = args.argumentCallback
+        ? args.argumentCallback(value)
+        : value;
 
       // @ts-expect-error - For some reason TypeScript just don't want to match it, no matter how hard we try. I challenge you to try to remove it!
       return valuesArray[index];
@@ -663,7 +667,6 @@ var calc = (function () {
    * }
    * ```
    */
-
 
   /**
    * @constant
@@ -1333,7 +1336,8 @@ var calc = (function () {
    */
   function getWeek(date, options) {
     const _date = toDate$1(date, options?.in);
-    const diff = +startOfWeek(_date, options) - +startOfWeekYear(_date, options);
+    const diff =
+      +startOfWeek(_date, options) - +startOfWeekYear(_date, options);
 
     // Round the number of weeks to the nearest integer because the number of
     // milliseconds in a week is not constant (e.g. it's different in the week of
@@ -1666,7 +1670,10 @@ var calc = (function () {
         // January, February, ..., December
         case "MMMM":
         default:
-          return localize.month(month, { width: "wide", context: "formatting" });
+          return localize.month(month, {
+            width: "wide",
+            context: "formatting",
+          });
       }
     },
 
@@ -1698,7 +1705,10 @@ var calc = (function () {
         // January, February, ..., December
         case "LLLL":
         default:
-          return localize.month(month, { width: "wide", context: "standalone" });
+          return localize.month(month, {
+            width: "wide",
+            context: "standalone",
+          });
       }
     },
 
@@ -2367,7 +2377,10 @@ var calc = (function () {
    * //=> false
    */
   function isValid(date) {
-    return !((!isDate(date) && typeof date !== "number") || isNaN(+toDate$1(date)));
+    return !(
+      (!isDate(date) && typeof date !== "number") ||
+      isNaN(+toDate$1(date))
+    );
   }
 
   // This RegExp consists of three parts separated by `|`:
@@ -2756,14 +2769,19 @@ var calc = (function () {
         const token = part.value;
 
         if (
-          (isProtectedWeekYearToken(token)) ||
-          (isProtectedDayOfYearToken(token))
+          isProtectedWeekYearToken(token) ||
+          isProtectedDayOfYearToken(token)
         ) {
           warnOrThrowProtectedError(token, formatStr, String(date));
         }
 
         const formatter = formatters[token[0]];
-        return formatter(originalDate, token, locale.localize, formatterOptions);
+        return formatter(
+          originalDate,
+          token,
+          locale.localize,
+          formatterOptions,
+        );
       })
       .join("");
   }
@@ -2967,93 +2985,100 @@ var calc = (function () {
    * `date` as it will be rendered in the `timeZone`.
    */
   function tzTokenizeDate(date, timeZone) {
-      const dtf = getDateTimeFormat(timeZone);
-      return 'formatToParts' in dtf ? partsOffset(dtf, date) : hackyOffset(dtf, date);
+    const dtf = getDateTimeFormat(timeZone);
+    return "formatToParts" in dtf
+      ? partsOffset(dtf, date)
+      : hackyOffset(dtf, date);
   }
+
   const typeToPos = {
-      year: 0,
-      month: 1,
-      day: 2,
-      hour: 3,
-      minute: 4,
-      second: 5,
+    year: 0,
+    month: 1,
+    day: 2,
+    hour: 3,
+    minute: 4,
+    second: 5,
   };
+
   function partsOffset(dtf, date) {
-      try {
-          const formatted = dtf.formatToParts(date);
-          const filled = [];
-          for (let i = 0; i < formatted.length; i++) {
-              const pos = typeToPos[formatted[i].type];
-              if (pos !== undefined) {
-                  filled[pos] = parseInt(formatted[i].value, 10);
-              }
-          }
-          return filled;
+    try {
+      const formatted = dtf.formatToParts(date);
+      const filled = [];
+      for (let i = 0; i < formatted.length; i++) {
+        const pos = typeToPos[formatted[i].type];
+        if (pos !== undefined) {
+          filled[pos] = parseInt(formatted[i].value, 10);
+        }
       }
-      catch (error) {
-          if (error instanceof RangeError) {
-              return [NaN];
-          }
-          throw error;
+      return filled;
+    } catch (error) {
+      if (error instanceof RangeError) {
+        return [NaN];
       }
+      throw error;
+    }
   }
+
   function hackyOffset(dtf, date) {
-      const formatted = dtf.format(date);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const parsed = /(\d+)\/(\d+)\/(\d+),? (\d+):(\d+):(\d+)/.exec(formatted);
-      // const [, fMonth, fDay, fYear, fHour, fMinute, fSecond] = parsed
-      // return [fYear, fMonth, fDay, fHour, fMinute, fSecond]
-      return [
-          parseInt(parsed[3], 10),
-          parseInt(parsed[1], 10),
-          parseInt(parsed[2], 10),
-          parseInt(parsed[4], 10),
-          parseInt(parsed[5], 10),
-          parseInt(parsed[6], 10),
-      ];
+    const formatted = dtf.format(date);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const parsed = /(\d+)\/(\d+)\/(\d+),? (\d+):(\d+):(\d+)/.exec(formatted);
+    // const [, fMonth, fDay, fYear, fHour, fMinute, fSecond] = parsed
+    // return [fYear, fMonth, fDay, fHour, fMinute, fSecond]
+    return [
+      parseInt(parsed[3], 10),
+      parseInt(parsed[1], 10),
+      parseInt(parsed[2], 10),
+      parseInt(parsed[4], 10),
+      parseInt(parsed[5], 10),
+      parseInt(parsed[6], 10),
+    ];
   }
+
   // Get a cached Intl.DateTimeFormat instance for the IANA `timeZone`. This can be used
   // to get deterministic local date/time output according to the `en-US` locale which
   // can be used to extract local time parts as necessary.
   const dtfCache = {};
   // New browsers use `hourCycle`, IE and Chrome <73 does not support it and uses `hour12`
-  const testDateFormatted = new Intl.DateTimeFormat('en-US', {
-      hourCycle: 'h23',
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-  }).format(new Date('2014-06-25T04:00:00.123Z'));
-  const hourCycleSupported = testDateFormatted === '06/25/2014, 00:00:00' ||
-      testDateFormatted === '‎06‎/‎25‎/‎2014‎ ‎00‎:‎00‎:‎00';
+  const testDateFormatted = new Intl.DateTimeFormat("en-US", {
+    hourCycle: "h23",
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date("2014-06-25T04:00:00.123Z"));
+  const hourCycleSupported =
+    testDateFormatted === "06/25/2014, 00:00:00" ||
+    testDateFormatted === "‎06‎/‎25‎/‎2014‎ ‎00‎:‎00‎:‎00";
+
   function getDateTimeFormat(timeZone) {
-      if (!dtfCache[timeZone]) {
-          dtfCache[timeZone] = hourCycleSupported
-              ? new Intl.DateTimeFormat('en-US', {
-                  hourCycle: 'h23',
-                  timeZone: timeZone,
-                  year: 'numeric',
-                  month: 'numeric',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-              })
-              : new Intl.DateTimeFormat('en-US', {
-                  hour12: false,
-                  timeZone: timeZone,
-                  year: 'numeric',
-                  month: 'numeric',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-              });
-      }
-      return dtfCache[timeZone];
+    if (!dtfCache[timeZone]) {
+      dtfCache[timeZone] = hourCycleSupported
+        ? new Intl.DateTimeFormat("en-US", {
+            hourCycle: "h23",
+            timeZone: timeZone,
+            year: "numeric",
+            month: "numeric",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        : new Intl.DateTimeFormat("en-US", {
+            hour12: false,
+            timeZone: timeZone,
+            year: "numeric",
+            month: "numeric",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+    }
+    return dtfCache[timeZone];
   }
 
   /**
@@ -3064,110 +3089,137 @@ var calc = (function () {
    * For `Date.UTC(...)`, use `newDateUTC(...).getTime()`.
    */
   function newDateUTC(fullYear, month, day, hour, minute, second, millisecond) {
-      const utcDate = new Date(0);
-      utcDate.setUTCFullYear(fullYear, month, day);
-      utcDate.setUTCHours(hour, minute, second, millisecond);
-      return utcDate;
+    const utcDate = new Date(0);
+    utcDate.setUTCFullYear(fullYear, month, day);
+    utcDate.setUTCHours(hour, minute, second, millisecond);
+    return utcDate;
   }
 
   const MILLISECONDS_IN_HOUR$1 = 3600000;
   const MILLISECONDS_IN_MINUTE$1 = 60000;
   const patterns$1 = {
-      timezone: /([Z+-].*)$/,
-      timezoneZ: /^(Z)$/,
-      timezoneHH: /^([+-]\d{2})$/,
-      timezoneHHMM: /^([+-])(\d{2}):?(\d{2})$/,
+    timezone: /([Z+-].*)$/,
+    timezoneZ: /^(Z)$/,
+    timezoneHH: /^([+-]\d{2})$/,
+    timezoneHHMM: /^([+-])(\d{2}):?(\d{2})$/,
   };
+
   // Parse constious time zone offset formats to an offset in milliseconds
   function tzParseTimezone(timezoneString, date, isUtcDate) {
-      // Empty string
-      if (!timezoneString) {
-          return 0;
+    // Empty string
+    if (!timezoneString) {
+      return 0;
+    }
+    // Z
+    let token = patterns$1.timezoneZ.exec(timezoneString);
+    if (token) {
+      return 0;
+    }
+    let hours;
+    let absoluteOffset;
+    // ±hh
+    token = patterns$1.timezoneHH.exec(timezoneString);
+    if (token) {
+      hours = parseInt(token[1], 10);
+      if (!validateTimezone(hours)) {
+        return NaN;
       }
-      // Z
-      let token = patterns$1.timezoneZ.exec(timezoneString);
-      if (token) {
-          return 0;
+      return -(hours * MILLISECONDS_IN_HOUR$1);
+    }
+    // ±hh:mm or ±hhmm
+    token = patterns$1.timezoneHHMM.exec(timezoneString);
+    if (token) {
+      hours = parseInt(token[2], 10);
+      const minutes = parseInt(token[3], 10);
+      if (!validateTimezone(hours, minutes)) {
+        return NaN;
       }
-      let hours;
-      let absoluteOffset;
-      // ±hh
-      token = patterns$1.timezoneHH.exec(timezoneString);
-      if (token) {
-          hours = parseInt(token[1], 10);
-          if (!validateTimezone(hours)) {
-              return NaN;
-          }
-          return -(hours * MILLISECONDS_IN_HOUR$1);
-      }
-      // ±hh:mm or ±hhmm
-      token = patterns$1.timezoneHHMM.exec(timezoneString);
-      if (token) {
-          hours = parseInt(token[2], 10);
-          const minutes = parseInt(token[3], 10);
-          if (!validateTimezone(hours, minutes)) {
-              return NaN;
-          }
-          absoluteOffset = Math.abs(hours) * MILLISECONDS_IN_HOUR$1 + minutes * MILLISECONDS_IN_MINUTE$1;
-          return token[1] === '+' ? -absoluteOffset : absoluteOffset;
-      }
-      // IANA time zone
-      if (isValidTimezoneIANAString(timezoneString)) {
-          date = new Date(date || Date.now());
-          const utcDate = toUtcDate(date);
-          const offset = calcOffset(utcDate, timezoneString);
-          const fixedOffset = fixOffset(date, offset, timezoneString);
-          return -fixedOffset;
-      }
-      return NaN;
+      absoluteOffset =
+        Math.abs(hours) * MILLISECONDS_IN_HOUR$1 +
+        minutes * MILLISECONDS_IN_MINUTE$1;
+      return token[1] === "+" ? -absoluteOffset : absoluteOffset;
+    }
+    // IANA time zone
+    if (isValidTimezoneIANAString(timezoneString)) {
+      date = new Date(date || Date.now());
+      const utcDate = toUtcDate(date);
+      const offset = calcOffset(utcDate, timezoneString);
+      const fixedOffset = fixOffset(date, offset, timezoneString);
+      return -fixedOffset;
+    }
+    return NaN;
   }
+
   function toUtcDate(date) {
-      return newDateUTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
+    return newDateUTC(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      date.getHours(),
+      date.getMinutes(),
+      date.getSeconds(),
+      date.getMilliseconds(),
+    );
   }
+
   function calcOffset(date, timezoneString) {
-      const tokens = tzTokenizeDate(date, timezoneString);
-      // ms dropped because it's not provided by tzTokenizeDate
-      const asUTC = newDateUTC(tokens[0], tokens[1] - 1, tokens[2], tokens[3] % 24, tokens[4], tokens[5], 0).getTime();
-      let asTS = date.getTime();
-      const over = asTS % 1000;
-      asTS -= over >= 0 ? over : 1000 + over;
-      return asUTC - asTS;
+    const tokens = tzTokenizeDate(date, timezoneString);
+    // ms dropped because it's not provided by tzTokenizeDate
+    const asUTC = newDateUTC(
+      tokens[0],
+      tokens[1] - 1,
+      tokens[2],
+      tokens[3] % 24,
+      tokens[4],
+      tokens[5],
+      0,
+    ).getTime();
+    let asTS = date.getTime();
+    const over = asTS % 1000;
+    asTS -= over >= 0 ? over : 1000 + over;
+    return asUTC - asTS;
   }
+
   function fixOffset(date, offset, timezoneString) {
-      const localTS = date.getTime();
-      // Our UTC time is just a guess because our offset is just a guess
-      let utcGuess = localTS - offset;
-      // Test whether the zone matches the offset for this ts
-      const o2 = calcOffset(new Date(utcGuess), timezoneString);
-      // If so, offset didn't change, and we're done
-      if (offset === o2) {
-          return offset;
-      }
-      // If not, change the ts by the difference in the offset
-      utcGuess -= o2 - offset;
-      // If that gives us the local time we want, we're done
-      const o3 = calcOffset(new Date(utcGuess), timezoneString);
-      if (o2 === o3) {
-          return o2;
-      }
-      // If it's different, we're in a hole time. The offset has changed, but we don't adjust the time
-      return Math.max(o2, o3);
+    const localTS = date.getTime();
+    // Our UTC time is just a guess because our offset is just a guess
+    let utcGuess = localTS - offset;
+    // Test whether the zone matches the offset for this ts
+    const o2 = calcOffset(new Date(utcGuess), timezoneString);
+    // If so, offset didn't change, and we're done
+    if (offset === o2) {
+      return offset;
+    }
+    // If not, change the ts by the difference in the offset
+    utcGuess -= o2 - offset;
+    // If that gives us the local time we want, we're done
+    const o3 = calcOffset(new Date(utcGuess), timezoneString);
+    if (o2 === o3) {
+      return o2;
+    }
+    // If it's different, we're in a hole time. The offset has changed, but we don't adjust the time
+    return Math.max(o2, o3);
   }
+
   function validateTimezone(hours, minutes) {
-      return -23 <= hours && hours <= 23 && (minutes == null || (0 <= minutes && minutes <= 59));
+    return (
+      -23 <= hours &&
+      hours <= 23 &&
+      (minutes == null || (0 <= minutes && minutes <= 59))
+    );
   }
+
   const validIANATimezoneCache = {};
+
   function isValidTimezoneIANAString(timeZoneString) {
-      if (validIANATimezoneCache[timeZoneString])
-          return true;
-      try {
-          new Intl.DateTimeFormat(undefined, { timeZone: timeZoneString });
-          validIANATimezoneCache[timeZoneString] = true;
-          return true;
-      }
-      catch (error) {
-          return false;
-      }
+    if (validIANATimezoneCache[timeZoneString]) return true;
+    try {
+      new Intl.DateTimeFormat(undefined, { timeZone: timeZoneString });
+      validIANATimezoneCache[timeZoneString] = true;
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
@@ -3182,46 +3234,58 @@ var calc = (function () {
    * This function returns the timezone offset in milliseconds that takes seconds in account.
    */
   function getTimezoneOffsetInMilliseconds(date) {
-      const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds()));
-      utcDate.setUTCFullYear(date.getFullYear());
-      return +date - +utcDate;
+    const utcDate = new Date(
+      Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        date.getHours(),
+        date.getMinutes(),
+        date.getSeconds(),
+        date.getMilliseconds(),
+      ),
+    );
+    utcDate.setUTCFullYear(date.getFullYear());
+    return +date - +utcDate;
   }
 
   /** Regex to identify the presence of a time zone specifier in a date string */
-  const tzPattern = /(Z|[+-]\d{2}(?::?\d{2})?| UTC| [a-zA-Z]+\/[a-zA-Z_]+(?:\/[a-zA-Z_]+)?)$/;
+  const tzPattern =
+    /(Z|[+-]\d{2}(?::?\d{2})?| UTC| [a-zA-Z]+\/[a-zA-Z_]+(?:\/[a-zA-Z_]+)?)$/;
 
   const MILLISECONDS_IN_HOUR = 3600000;
   const MILLISECONDS_IN_MINUTE = 60000;
   const DEFAULT_ADDITIONAL_DIGITS = 2;
   const patterns = {
-      dateTimePattern: /^([0-9W+-]+)(T| )(.*)/,
-      datePattern: /^([0-9W+-]+)(.*)/,
-      plainTime: /:/,
-      // year tokens
-      YY: /^(\d{2})$/,
-      YYY: [
-          /^([+-]\d{2})$/, // 0 additional digits
-          /^([+-]\d{3})$/, // 1 additional digit
-          /^([+-]\d{4})$/, // 2 additional digits
-      ],
-      YYYY: /^(\d{4})/,
-      YYYYY: [
-          /^([+-]\d{4})/, // 0 additional digits
-          /^([+-]\d{5})/, // 1 additional digit
-          /^([+-]\d{6})/, // 2 additional digits
-      ],
-      // date tokens
-      MM: /^-(\d{2})$/,
-      DDD: /^-?(\d{3})$/,
-      MMDD: /^-?(\d{2})-?(\d{2})$/,
-      Www: /^-?W(\d{2})$/,
-      WwwD: /^-?W(\d{2})-?(\d{1})$/,
-      HH: /^(\d{2}([.,]\d*)?)$/,
-      HHMM: /^(\d{2}):?(\d{2}([.,]\d*)?)$/,
-      HHMMSS: /^(\d{2}):?(\d{2}):?(\d{2}([.,]\d*)?)$/,
-      // time zone tokens (to identify the presence of a tz)
-      timeZone: tzPattern,
+    dateTimePattern: /^([0-9W+-]+)(T| )(.*)/,
+    datePattern: /^([0-9W+-]+)(.*)/,
+    plainTime: /:/,
+    // year tokens
+    YY: /^(\d{2})$/,
+    YYY: [
+      /^([+-]\d{2})$/, // 0 additional digits
+      /^([+-]\d{3})$/, // 1 additional digit
+      /^([+-]\d{4})$/, // 2 additional digits
+    ],
+    YYYY: /^(\d{4})/,
+    YYYYY: [
+      /^([+-]\d{4})/, // 0 additional digits
+      /^([+-]\d{5})/, // 1 additional digit
+      /^([+-]\d{6})/, // 2 additional digits
+    ],
+    // date tokens
+    MM: /^-(\d{2})$/,
+    DDD: /^-?(\d{3})$/,
+    MMDD: /^-?(\d{2})-?(\d{2})$/,
+    Www: /^-?W(\d{2})$/,
+    WwwD: /^-?W(\d{2})-?(\d{1})$/,
+    HH: /^(\d{2}([.,]\d*)?)$/,
+    HHMM: /^(\d{2}):?(\d{2}([.,]\d*)?)$/,
+    HHMMSS: /^(\d{2}):?(\d{2}):?(\d{2}([.,]\d*)?)$/,
+    // time zone tokens (to identify the presence of a tz)
+    timeZone: tzPattern,
   };
+
   /**
    * @name toDate
    * @category Common Helpers
@@ -3265,493 +3329,605 @@ var calc = (function () {
    * //=> Fri Apr 11 2014 00:00:00
    */
   function toDate(argument, options = {}) {
-      if (arguments.length < 1) {
-          throw new TypeError('1 argument required, but only ' + arguments.length + ' present');
-      }
-      if (argument === null) {
+    if (arguments.length < 1) {
+      throw new TypeError(
+        "1 argument required, but only " + arguments.length + " present",
+      );
+    }
+    if (argument === null) {
+      return new Date(NaN);
+    }
+    const additionalDigits =
+      options.additionalDigits == null
+        ? DEFAULT_ADDITIONAL_DIGITS
+        : Number(options.additionalDigits);
+    if (
+      additionalDigits !== 2 &&
+      additionalDigits !== 1 &&
+      additionalDigits !== 0
+    ) {
+      throw new RangeError("additionalDigits must be 0, 1 or 2");
+    }
+    // Clone the date
+    if (
+      argument instanceof Date ||
+      (typeof argument === "object" &&
+        Object.prototype.toString.call(argument) === "[object Date]")
+    ) {
+      // Prevent the date to lose the milliseconds when passed to new Date() in IE10
+      return new Date(argument.getTime());
+    } else if (
+      typeof argument === "number" ||
+      Object.prototype.toString.call(argument) === "[object Number]"
+    ) {
+      return new Date(argument);
+    } else if (
+      !(Object.prototype.toString.call(argument) === "[object String]")
+    ) {
+      return new Date(NaN);
+    }
+    const dateStrings = splitDateString(argument);
+    const { year, restDateString } = parseYear(
+      dateStrings.date,
+      additionalDigits,
+    );
+    const date = parseDate(restDateString, year);
+    if (date === null || isNaN(date.getTime())) {
+      return new Date(NaN);
+    }
+    if (date) {
+      const timestamp = date.getTime();
+      let time = 0;
+      let offset;
+      if (dateStrings.time) {
+        time = parseTime(dateStrings.time);
+        if (time === null || isNaN(time)) {
           return new Date(NaN);
+        }
       }
-      const additionalDigits = options.additionalDigits == null ? DEFAULT_ADDITIONAL_DIGITS : Number(options.additionalDigits);
-      if (additionalDigits !== 2 && additionalDigits !== 1 && additionalDigits !== 0) {
-          throw new RangeError('additionalDigits must be 0, 1 or 2');
-      }
-      // Clone the date
-      if (argument instanceof Date ||
-          (typeof argument === 'object' && Object.prototype.toString.call(argument) === '[object Date]')) {
-          // Prevent the date to lose the milliseconds when passed to new Date() in IE10
-          return new Date(argument.getTime());
-      }
-      else if (typeof argument === 'number' ||
-          Object.prototype.toString.call(argument) === '[object Number]') {
-          return new Date(argument);
-      }
-      else if (!(Object.prototype.toString.call(argument) === '[object String]')) {
+      if (dateStrings.timeZone || options.timeZone) {
+        offset = tzParseTimezone(
+          dateStrings.timeZone || options.timeZone,
+          new Date(timestamp + time),
+        );
+        if (isNaN(offset)) {
           return new Date(NaN);
+        }
+      } else {
+        // get offset accurate to hour in time zones that change offset
+        offset = getTimezoneOffsetInMilliseconds(new Date(timestamp + time));
+        offset = getTimezoneOffsetInMilliseconds(
+          new Date(timestamp + time + offset),
+        );
       }
-      const dateStrings = splitDateString(argument);
-      const { year, restDateString } = parseYear(dateStrings.date, additionalDigits);
-      const date = parseDate(restDateString, year);
-      if (date === null || isNaN(date.getTime())) {
-          return new Date(NaN);
-      }
-      if (date) {
-          const timestamp = date.getTime();
-          let time = 0;
-          let offset;
-          if (dateStrings.time) {
-              time = parseTime(dateStrings.time);
-              if (time === null || isNaN(time)) {
-                  return new Date(NaN);
-              }
-          }
-          if (dateStrings.timeZone || options.timeZone) {
-              offset = tzParseTimezone(dateStrings.timeZone || options.timeZone, new Date(timestamp + time));
-              if (isNaN(offset)) {
-                  return new Date(NaN);
-              }
-          }
-          else {
-              // get offset accurate to hour in time zones that change offset
-              offset = getTimezoneOffsetInMilliseconds(new Date(timestamp + time));
-              offset = getTimezoneOffsetInMilliseconds(new Date(timestamp + time + offset));
-          }
-          return new Date(timestamp + time + offset);
-      }
-      else {
-          return new Date(NaN);
-      }
+      return new Date(timestamp + time + offset);
+    } else {
+      return new Date(NaN);
+    }
   }
+
   function splitDateString(dateString) {
-      const dateStrings = {};
-      let parts = patterns.dateTimePattern.exec(dateString);
-      let timeString;
-      if (!parts) {
-          parts = patterns.datePattern.exec(dateString);
-          if (parts) {
-              dateStrings.date = parts[1];
-              timeString = parts[2];
-          }
-          else {
-              dateStrings.date = null;
-              timeString = dateString;
-          }
+    const dateStrings = {};
+    let parts = patterns.dateTimePattern.exec(dateString);
+    let timeString;
+    if (!parts) {
+      parts = patterns.datePattern.exec(dateString);
+      if (parts) {
+        dateStrings.date = parts[1];
+        timeString = parts[2];
+      } else {
+        dateStrings.date = null;
+        timeString = dateString;
       }
-      else {
-          dateStrings.date = parts[1];
-          timeString = parts[3];
+    } else {
+      dateStrings.date = parts[1];
+      timeString = parts[3];
+    }
+    if (timeString) {
+      const token = patterns.timeZone.exec(timeString);
+      if (token) {
+        dateStrings.time = timeString.replace(token[1], "");
+        dateStrings.timeZone = token[1].trim();
+      } else {
+        dateStrings.time = timeString;
       }
-      if (timeString) {
-          const token = patterns.timeZone.exec(timeString);
-          if (token) {
-              dateStrings.time = timeString.replace(token[1], '');
-              dateStrings.timeZone = token[1].trim();
-          }
-          else {
-              dateStrings.time = timeString;
-          }
-      }
-      return dateStrings;
+    }
+    return dateStrings;
   }
+
   function parseYear(dateString, additionalDigits) {
-      if (dateString) {
-          const patternYYY = patterns.YYY[additionalDigits];
-          const patternYYYYY = patterns.YYYYY[additionalDigits];
-          // YYYY or ±YYYYY
-          let token = patterns.YYYY.exec(dateString) || patternYYYYY.exec(dateString);
-          if (token) {
-              const yearString = token[1];
-              return {
-                  year: parseInt(yearString, 10),
-                  restDateString: dateString.slice(yearString.length),
-              };
-          }
-          // YY or ±YYY
-          token = patterns.YY.exec(dateString) || patternYYY.exec(dateString);
-          if (token) {
-              const centuryString = token[1];
-              return {
-                  year: parseInt(centuryString, 10) * 100,
-                  restDateString: dateString.slice(centuryString.length),
-              };
-          }
+    if (dateString) {
+      const patternYYY = patterns.YYY[additionalDigits];
+      const patternYYYYY = patterns.YYYYY[additionalDigits];
+      // YYYY or ±YYYYY
+      let token =
+        patterns.YYYY.exec(dateString) || patternYYYYY.exec(dateString);
+      if (token) {
+        const yearString = token[1];
+        return {
+          year: parseInt(yearString, 10),
+          restDateString: dateString.slice(yearString.length),
+        };
       }
-      // Invalid ISO-formatted year
-      return {
-          year: null,
-      };
+      // YY or ±YYY
+      token = patterns.YY.exec(dateString) || patternYYY.exec(dateString);
+      if (token) {
+        const centuryString = token[1];
+        return {
+          year: parseInt(centuryString, 10) * 100,
+          restDateString: dateString.slice(centuryString.length),
+        };
+      }
+    }
+    // Invalid ISO-formatted year
+    return {
+      year: null,
+    };
   }
+
   function parseDate(dateString, year) {
-      // Invalid ISO-formatted year
-      if (year === null) {
-          return null;
-      }
-      let date;
-      let month;
-      let week;
-      // YYYY
-      if (!dateString || !dateString.length) {
-          date = new Date(0);
-          date.setUTCFullYear(year);
-          return date;
-      }
-      // YYYY-MM
-      let token = patterns.MM.exec(dateString);
-      if (token) {
-          date = new Date(0);
-          month = parseInt(token[1], 10) - 1;
-          if (!validateDate(year, month)) {
-              return new Date(NaN);
-          }
-          date.setUTCFullYear(year, month);
-          return date;
-      }
-      // YYYY-DDD or YYYYDDD
-      token = patterns.DDD.exec(dateString);
-      if (token) {
-          date = new Date(0);
-          const dayOfYear = parseInt(token[1], 10);
-          if (!validateDayOfYearDate(year, dayOfYear)) {
-              return new Date(NaN);
-          }
-          date.setUTCFullYear(year, 0, dayOfYear);
-          return date;
-      }
-      // yyyy-MM-dd or YYYYMMDD
-      token = patterns.MMDD.exec(dateString);
-      if (token) {
-          date = new Date(0);
-          month = parseInt(token[1], 10) - 1;
-          const day = parseInt(token[2], 10);
-          if (!validateDate(year, month, day)) {
-              return new Date(NaN);
-          }
-          date.setUTCFullYear(year, month, day);
-          return date;
-      }
-      // YYYY-Www or YYYYWww
-      token = patterns.Www.exec(dateString);
-      if (token) {
-          week = parseInt(token[1], 10) - 1;
-          if (!validateWeekDate(week)) {
-              return new Date(NaN);
-          }
-          return dayOfISOWeekYear(year, week);
-      }
-      // YYYY-Www-D or YYYYWwwD
-      token = patterns.WwwD.exec(dateString);
-      if (token) {
-          week = parseInt(token[1], 10) - 1;
-          const dayOfWeek = parseInt(token[2], 10) - 1;
-          if (!validateWeekDate(week, dayOfWeek)) {
-              return new Date(NaN);
-          }
-          return dayOfISOWeekYear(year, week, dayOfWeek);
-      }
-      // Invalid ISO-formatted date
+    // Invalid ISO-formatted year
+    if (year === null) {
       return null;
-  }
-  function parseTime(timeString) {
-      let hours;
-      let minutes;
-      // hh
-      let token = patterns.HH.exec(timeString);
-      if (token) {
-          hours = parseFloat(token[1].replace(',', '.'));
-          if (!validateTime(hours)) {
-              return NaN;
-          }
-          return (hours % 24) * MILLISECONDS_IN_HOUR;
-      }
-      // hh:mm or hhmm
-      token = patterns.HHMM.exec(timeString);
-      if (token) {
-          hours = parseInt(token[1], 10);
-          minutes = parseFloat(token[2].replace(',', '.'));
-          if (!validateTime(hours, minutes)) {
-              return NaN;
-          }
-          return (hours % 24) * MILLISECONDS_IN_HOUR + minutes * MILLISECONDS_IN_MINUTE;
-      }
-      // hh:mm:ss or hhmmss
-      token = patterns.HHMMSS.exec(timeString);
-      if (token) {
-          hours = parseInt(token[1], 10);
-          minutes = parseInt(token[2], 10);
-          const seconds = parseFloat(token[3].replace(',', '.'));
-          if (!validateTime(hours, minutes, seconds)) {
-              return NaN;
-          }
-          return (hours % 24) * MILLISECONDS_IN_HOUR + minutes * MILLISECONDS_IN_MINUTE + seconds * 1000;
-      }
-      // Invalid ISO-formatted time
-      return null;
-  }
-  function dayOfISOWeekYear(isoWeekYear, week, day) {
-      week = week || 0;
-      day = day || 0;
-      const date = new Date(0);
-      date.setUTCFullYear(isoWeekYear, 0, 4);
-      const fourthOfJanuaryDay = date.getUTCDay() || 7;
-      const diff = week * 7 + day + 1 - fourthOfJanuaryDay;
-      date.setUTCDate(date.getUTCDate() + diff);
+    }
+    let date;
+    let month;
+    let week;
+    // YYYY
+    if (!dateString || !dateString.length) {
+      date = new Date(0);
+      date.setUTCFullYear(year);
       return date;
+    }
+    // YYYY-MM
+    let token = patterns.MM.exec(dateString);
+    if (token) {
+      date = new Date(0);
+      month = parseInt(token[1], 10) - 1;
+      if (!validateDate(year, month)) {
+        return new Date(NaN);
+      }
+      date.setUTCFullYear(year, month);
+      return date;
+    }
+    // YYYY-DDD or YYYYDDD
+    token = patterns.DDD.exec(dateString);
+    if (token) {
+      date = new Date(0);
+      const dayOfYear = parseInt(token[1], 10);
+      if (!validateDayOfYearDate(year, dayOfYear)) {
+        return new Date(NaN);
+      }
+      date.setUTCFullYear(year, 0, dayOfYear);
+      return date;
+    }
+    // yyyy-MM-dd or YYYYMMDD
+    token = patterns.MMDD.exec(dateString);
+    if (token) {
+      date = new Date(0);
+      month = parseInt(token[1], 10) - 1;
+      const day = parseInt(token[2], 10);
+      if (!validateDate(year, month, day)) {
+        return new Date(NaN);
+      }
+      date.setUTCFullYear(year, month, day);
+      return date;
+    }
+    // YYYY-Www or YYYYWww
+    token = patterns.Www.exec(dateString);
+    if (token) {
+      week = parseInt(token[1], 10) - 1;
+      if (!validateWeekDate(week)) {
+        return new Date(NaN);
+      }
+      return dayOfISOWeekYear(year, week);
+    }
+    // YYYY-Www-D or YYYYWwwD
+    token = patterns.WwwD.exec(dateString);
+    if (token) {
+      week = parseInt(token[1], 10) - 1;
+      const dayOfWeek = parseInt(token[2], 10) - 1;
+      if (!validateWeekDate(week, dayOfWeek)) {
+        return new Date(NaN);
+      }
+      return dayOfISOWeekYear(year, week, dayOfWeek);
+    }
+    // Invalid ISO-formatted date
+    return null;
   }
+
+  function parseTime(timeString) {
+    let hours;
+    let minutes;
+    // hh
+    let token = patterns.HH.exec(timeString);
+    if (token) {
+      hours = parseFloat(token[1].replace(",", "."));
+      if (!validateTime(hours)) {
+        return NaN;
+      }
+      return (hours % 24) * MILLISECONDS_IN_HOUR;
+    }
+    // hh:mm or hhmm
+    token = patterns.HHMM.exec(timeString);
+    if (token) {
+      hours = parseInt(token[1], 10);
+      minutes = parseFloat(token[2].replace(",", "."));
+      if (!validateTime(hours, minutes)) {
+        return NaN;
+      }
+      return (
+        (hours % 24) * MILLISECONDS_IN_HOUR + minutes * MILLISECONDS_IN_MINUTE
+      );
+    }
+    // hh:mm:ss or hhmmss
+    token = patterns.HHMMSS.exec(timeString);
+    if (token) {
+      hours = parseInt(token[1], 10);
+      minutes = parseInt(token[2], 10);
+      const seconds = parseFloat(token[3].replace(",", "."));
+      if (!validateTime(hours, minutes, seconds)) {
+        return NaN;
+      }
+      return (
+        (hours % 24) * MILLISECONDS_IN_HOUR +
+        minutes * MILLISECONDS_IN_MINUTE +
+        seconds * 1000
+      );
+    }
+    // Invalid ISO-formatted time
+    return null;
+  }
+
+  function dayOfISOWeekYear(isoWeekYear, week, day) {
+    week = week || 0;
+    day = day || 0;
+    const date = new Date(0);
+    date.setUTCFullYear(isoWeekYear, 0, 4);
+    const fourthOfJanuaryDay = date.getUTCDay() || 7;
+    const diff = week * 7 + day + 1 - fourthOfJanuaryDay;
+    date.setUTCDate(date.getUTCDate() + diff);
+    return date;
+  }
+
   // Validation functions
   const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  const DAYS_IN_MONTH_LEAP_YEAR = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const DAYS_IN_MONTH_LEAP_YEAR = [
+    31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+  ];
+
   function isLeapYearIndex(year) {
-      return year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0);
+    return year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0);
   }
+
   function validateDate(year, month, date) {
-      if (month < 0 || month > 11) {
-          return false;
-      }
-      if (date != null) {
-          if (date < 1) {
-              return false;
-          }
-          const isLeapYear = isLeapYearIndex(year);
-          if (isLeapYear && date > DAYS_IN_MONTH_LEAP_YEAR[month]) {
-              return false;
-          }
-          if (!isLeapYear && date > DAYS_IN_MONTH[month]) {
-              return false;
-          }
-      }
-      return true;
-  }
-  function validateDayOfYearDate(year, dayOfYear) {
-      if (dayOfYear < 1) {
-          return false;
+    if (month < 0 || month > 11) {
+      return false;
+    }
+    if (date != null) {
+      if (date < 1) {
+        return false;
       }
       const isLeapYear = isLeapYearIndex(year);
-      if (isLeapYear && dayOfYear > 366) {
-          return false;
+      if (isLeapYear && date > DAYS_IN_MONTH_LEAP_YEAR[month]) {
+        return false;
       }
-      if (!isLeapYear && dayOfYear > 365) {
-          return false;
+      if (!isLeapYear && date > DAYS_IN_MONTH[month]) {
+        return false;
       }
-      return true;
+    }
+    return true;
   }
+
+  function validateDayOfYearDate(year, dayOfYear) {
+    if (dayOfYear < 1) {
+      return false;
+    }
+    const isLeapYear = isLeapYearIndex(year);
+    if (isLeapYear && dayOfYear > 366) {
+      return false;
+    }
+    if (!isLeapYear && dayOfYear > 365) {
+      return false;
+    }
+    return true;
+  }
+
   function validateWeekDate(week, day) {
-      if (week < 0 || week > 52) {
-          return false;
-      }
-      if (day != null && (day < 0 || day > 6)) {
-          return false;
-      }
-      return true;
+    if (week < 0 || week > 52) {
+      return false;
+    }
+    if (day != null && (day < 0 || day > 6)) {
+      return false;
+    }
+    return true;
   }
+
   function validateTime(hours, minutes, seconds) {
-      if (hours < 0 || hours >= 25) {
-          return false;
-      }
-      if (minutes != null && (minutes < 0 || minutes >= 60)) {
-          return false;
-      }
-      if (seconds != null && (seconds < 0 || seconds >= 60)) {
-          return false;
-      }
-      return true;
+    if (hours < 0 || hours >= 25) {
+      return false;
+    }
+    if (minutes != null && (minutes < 0 || minutes >= 60)) {
+      return false;
+    }
+    if (seconds != null && (seconds < 0 || seconds >= 60)) {
+      return false;
+    }
+    return true;
   }
 
   class AnnuityCreditCalculator {
-      constructor(options) {
-          this.timezone = "Europe/Moscow"; // Часовой пояс Москвы
-          const { percentRate, term, creditSize, startDate, holidays = [] } = options;
-          this.percentRate = percentRate;
-          this.term = term;
-          this.creditSize = creditSize;
-          this.startDate = startDate;
-          this.holidays = holidays;
-          this.validateInputs();
+    constructor(options) {
+      this.timezone = "Europe/Moscow"; // Часовой пояс Москвы
+      const {
+        percentRate,
+        term,
+        creditSize,
+        startDate,
+        holidays = [],
+      } = options;
+      this.percentRate = percentRate;
+      this.term = term - 1;
+      this.creditSize = creditSize;
+      this.startDate = startDate;
+      this.holidays = holidays;
+      this.validateInputs();
+    }
+
+    validateInputs() {
+      if (this.percentRate <= 0) {
+        throw new Error("Percent rate must be greater than 0.");
       }
-      validateInputs() {
-          if (this.percentRate <= 0) {
-              throw new Error("Percent rate must be greater than 0.");
-          }
-          if (this.term <= 0 || !Number.isInteger(this.term)) {
-              throw new Error("Term must be a positive integer.");
-          }
-          if (this.creditSize <= BigInt(0)) {
-              throw new Error("Credit size must be greater than 0.");
-          }
-          if (!(this.startDate instanceof Date) || isNaN(this.startDate.getTime())) {
-              throw new Error("Invalid start date provided.");
-          }
+      if (this.term <= 0 || !Number.isInteger(this.term)) {
+        throw new Error("Term must be a positive integer.");
       }
-      calculateMonthlyRate() {
-          return this.percentRate / 12 / 100; // Месячная ставка в виде десятичной дроби
+      if (this.creditSize <= BigInt(0)) {
+        throw new Error("Credit size must be greater than 0.");
       }
-      calculateAnnuityCoefficient(monthlyRate) {
-          const numerator = monthlyRate * Math.pow(1 + monthlyRate, this.term);
-          const denominator = Math.pow(1 + monthlyRate, this.term) - 1;
-          return numerator / denominator;
+      if (
+        !(this.startDate instanceof Date) ||
+        isNaN(this.startDate.getTime())
+      ) {
+        throw new Error("Invalid start date provided.");
       }
-      adjustPaymentDate(date) {
-          let adjustedDate = date;
-          // Перенос на следующий рабочий день, если дата приходится на выходной или праздник
-          while (isSaturday(adjustedDate) ||
-              isSunday(adjustedDate) ||
-              this.isHoliday(adjustedDate)) {
-              adjustedDate = addDays(adjustedDate, 1);
-          }
-          return adjustedDate;
+    }
+
+    calculateMonthlyRate() {
+      return this.percentRate / 12 / 100; // Месячная ставка в виде десятичной дроби
+    }
+
+    calculateAnnuityCoefficient(monthlyRate) {
+      const numerator = monthlyRate * Math.pow(1 + monthlyRate, this.term);
+      const denominator = Math.pow(1 + monthlyRate, this.term) - 1;
+      return numerator / denominator;
+    }
+
+    adjustPaymentDate(date) {
+      let adjustedDate = date;
+      // Перенос на следующий рабочий день, если дата приходится на выходной или праздник
+      while (
+        isSaturday(adjustedDate) ||
+        isSunday(adjustedDate) ||
+        this.isHoliday(adjustedDate)
+      ) {
+        adjustedDate = addDays(adjustedDate, 1);
       }
-      isHoliday(date) {
-          const formattedDate = format(date, "yyyy-MM-dd");
-          return this.holidays.includes(formattedDate);
+      return adjustedDate;
+    }
+
+    isHoliday(date) {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      return this.holidays.includes(formattedDate);
+    }
+
+    daysInMonth(date) {
+      const month = date.getMonth() + 1; // January is 0
+      if (month === 2) {
+        // February
+        return isLeapYear(date) ? 29 : 28;
       }
-      daysInMonth(date) {
-          const month = date.getMonth() + 1; // January is 0
-          if (month === 2) {
-              // February
-              return isLeapYear(date) ? 29 : 28;
-          }
-          // Months with 30 days
-          if ([4, 6, 9, 11].includes(month)) {
-              return 30;
-          }
-          return 31;
+      // Months with 30 days
+      if ([4, 6, 9, 11].includes(month)) {
+        return 30;
       }
-      calculate() {
-          const monthlyRate = this.calculateMonthlyRate();
-          // Рассчитываем ежемесячный аннуитетный платёж в копейках
-          const annuityCoefficient = this.calculateAnnuityCoefficient(monthlyRate);
-          const monthlyPayment = this.calculateMonthlyPayment(annuityCoefficient);
-          let remainingPrincipal = this.creditSize;
-          const payments = [];
-          const firstPayment = this.calculateFirstPayment(this.startDate, remainingPrincipal);
-          payments.push(firstPayment);
-          let prevPaymentDate = firstPayment.dateRaw;
-          // Платежи начиная со второго месяца
-          for (let i = 1; i < this.term; i++) {
-              const intermediatePayment = this.calculateIntermediatePayment(i, prevPaymentDate, monthlyPayment, remainingPrincipal);
-              // Уменьшаем остаток основного долга
-              remainingPrincipal = intermediatePayment.remainingPrincipal;
-              payments.push(intermediatePayment);
-              prevPaymentDate = intermediatePayment.dateRaw;
-          }
-          const lastPayment = this.calculateLastPayment(prevPaymentDate, remainingPrincipal);
-          payments.push(lastPayment);
-          const totalPrincipal = payments.reduce((sum, p) => sum + p.principal, BigInt(0));
-          const totalInterest = payments.reduce((sum, p) => sum + p.interest, BigInt(0));
-          const totalSum = payments.reduce((sum, p) => sum + p.total, BigInt(0));
-          return {
-              totalPrincipal,
-              totalInterest,
-              totalSum,
-              payments,
-          };
+      return 31;
+    }
+
+    calculate() {
+      const monthlyRate = this.calculateMonthlyRate();
+      // Рассчитываем ежемесячный аннуитетный платёж в копейках
+      const annuityCoefficient = this.calculateAnnuityCoefficient(monthlyRate);
+      const monthlyPayment = this.calculateMonthlyPayment(annuityCoefficient);
+      let remainingPrincipal = this.creditSize;
+      const payments = [];
+      const firstPayment = this.calculateFirstPayment(
+        this.startDate,
+        remainingPrincipal,
+      );
+      payments.push(firstPayment);
+      let prevPaymentDate = firstPayment.dateRaw;
+      // Платежи начиная со второго месяца
+      for (let i = 1; i < this.term; i++) {
+        const intermediatePayment = this.calculateIntermediatePayment(
+          i,
+          prevPaymentDate,
+          monthlyPayment,
+          remainingPrincipal,
+        );
+        // Уменьшаем остаток основного долга
+        remainingPrincipal = intermediatePayment.remainingPrincipal;
+        payments.push(intermediatePayment);
+        prevPaymentDate = intermediatePayment.dateRaw;
       }
-      // Метод для расчета аннуитетного платежа
-      calculateMonthlyPayment(annuityCoefficient) {
-          return Math.round(Number(this.creditSize) * annuityCoefficient);
+      const lastPayment = this.calculateLastPayment(
+        prevPaymentDate,
+        remainingPrincipal,
+      );
+      payments.push(lastPayment);
+      const totalPrincipal = payments.reduce(
+        (sum, p) => sum + p.principal,
+        BigInt(0),
+      );
+      const totalInterest = payments.reduce(
+        (sum, p) => sum + p.interest,
+        BigInt(0),
+      );
+      const totalSum = payments.reduce((sum, p) => sum + p.total, BigInt(0));
+      return {
+        totalPrincipal,
+        totalInterest,
+        totalSum,
+        payments,
+      };
+    }
+
+    // Метод для расчета аннуитетного платежа
+    calculateMonthlyPayment(annuityCoefficient) {
+      return Math.round(Number(this.creditSize) * annuityCoefficient);
+    }
+
+    calculateFirstPayment(startDate, remainingPrincipal) {
+      // Дата первого платежа через месяц после начала кредита
+      let paymentDateUnadjusted = toDate(addMonths(startDate, 1), {
+        timeZone: this.timezone,
+      });
+      // Рассчитываем разницу в днях между начальной датой и предполагаемой датой первого платежа
+      const daysToNextPayment = Math.ceil(
+        (paymentDateUnadjusted.getTime() - this.startDate.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+      // Добавляем это количество дней к начальной дате
+      paymentDateUnadjusted = toDate(addDays(startDate, daysToNextPayment), {
+        timeZone: this.timezone,
+      });
+      // Корректируем дату на рабочий день
+      const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
+      // Первый платёж: только проценты
+      const interest = this.calculateInterest(
+        startDate,
+        paymentDateUnadjusted,
+        remainingPrincipal,
+      );
+      return {
+        date: format(paymentDateAdjusted, "yyyy-MM-dd"),
+        dateRaw: paymentDateUnadjusted,
+        principal: BigInt(0), // В первый месяц основной долг не погашается
+        interest: interest,
+        total: interest, // Общий платёж = только проценты
+        remainingPrincipal,
+      };
+    }
+
+    // Метод для расчета промежуточного платежа
+    calculateIntermediatePayment(
+      i,
+      prevPaymentDate,
+      monthlyPayment,
+      remainingPrincipal,
+    ) {
+      // Вычисляем дату платежа
+      const paymentDateUnadjusted = toDate(addMonths(this.startDate, i + 1), {
+        timeZone: this.timezone,
+      });
+      // Корректируем только дату платежа, если она попадает на выходной или праздник
+      const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
+      const formattedDate = format(paymentDateAdjusted, "yyyy-MM-dd");
+      // Проценты за текущий месяц
+      const interest = this.calculateInterest(
+        prevPaymentDate,
+        paymentDateUnadjusted,
+        remainingPrincipal,
+      );
+      // Основной долг за текущий месяц
+      const principalPayment = BigInt(monthlyPayment) - interest;
+      return {
+        date: formattedDate,
+        dateRaw: paymentDateUnadjusted,
+        principal: principalPayment,
+        interest: interest,
+        total: BigInt(monthlyPayment),
+        remainingPrincipal: remainingPrincipal - principalPayment,
+      };
+    }
+
+    // Метод для расчета последнего платежа
+    calculateLastPayment(prevPaymentDate, remainingPrincipal) {
+      const paymentDateUnadjusted = toDate(addMonths(prevPaymentDate, 1), {
+        timeZone: this.timezone,
+      });
+      const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
+      const formattedDate = format(paymentDateAdjusted, "yyyy-MM-dd");
+      // Проценты за текущий месяц
+      const interest = this.calculateInterest(
+        prevPaymentDate,
+        paymentDateUnadjusted,
+        remainingPrincipal,
+      );
+      return {
+        date: formattedDate,
+        principal: remainingPrincipal,
+        interest,
+        total: remainingPrincipal + interest,
+        remainingPrincipal: BigInt(0),
+      };
+    }
+
+    calculateInterest(prevPaymentDate, paymentDate, remainingPrincipal) {
+      const prevYear = prevPaymentDate.getFullYear();
+      const currentYear = paymentDate.getFullYear();
+      let interestPayment = BigInt(0);
+      if (prevYear !== currentYear) {
+        // Если перескакиваем на следующий год
+        const lastDayOfPrevYear = new Date(prevYear, 11, 31); // 31 декабря предыдущего года
+        // Количество дней в предыдущем году
+        const daysInYearPrev = isLeapYear(prevPaymentDate) ? 366 : 365;
+        const daysInPrevYear = Math.ceil(
+          (lastDayOfPrevYear.getTime() - prevPaymentDate.getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+        const interestPrevYear = BigInt(
+          Math.round(
+            Number(remainingPrincipal) *
+              (this.percentRate / 100 / daysInYearPrev) *
+              daysInPrevYear,
+          ),
+        );
+        // Количество дней в текущем году
+        const daysInYearCurrent = isLeapYear(paymentDate) ? 366 : 365;
+        const daysInCurrentYear = Math.ceil(
+          (paymentDate.getTime() - new Date(currentYear, 0, 1).getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+        const interestCurrentYear = BigInt(
+          Math.round(
+            Number(remainingPrincipal) *
+              (this.percentRate / 100 / daysInYearCurrent) *
+              daysInCurrentYear,
+          ),
+        );
+        // Суммируем проценты за оба периода
+        interestPayment = interestPrevYear + interestCurrentYear;
+      } else {
+        // Если в пределах одного года
+        const daysInYear = isLeapYear(prevPaymentDate) ? 366 : 365;
+        const daysInPrevMonth = this.daysInMonth(prevPaymentDate);
+        interestPayment = BigInt(
+          Math.round(
+            Number(remainingPrincipal) *
+              (this.percentRate / 100 / daysInYear) *
+              daysInPrevMonth,
+          ),
+        );
       }
-      calculateFirstPayment(startDate, remainingPrincipal) {
-          // Дата первого платежа через месяц после начала кредита
-          let paymentDateUnadjusted = toDate(addMonths(startDate, 1), {
-              timeZone: this.timezone,
-          });
-          // Рассчитываем разницу в днях между начальной датой и предполагаемой датой первого платежа
-          const daysToNextPayment = Math.ceil((paymentDateUnadjusted.getTime() - this.startDate.getTime()) /
-              (1000 * 60 * 60 * 24));
-          // Добавляем это количество дней к начальной дате
-          paymentDateUnadjusted = toDate(addDays(startDate, daysToNextPayment), {
-              timeZone: this.timezone,
-          });
-          // Корректируем дату на рабочий день
-          const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
-          // Первый платёж: только проценты
-          const interest = this.calculateInterest(startDate, paymentDateUnadjusted, remainingPrincipal);
-          return {
-              date: format(paymentDateAdjusted, "yyyy-MM-dd"),
-              dateRaw: paymentDateUnadjusted,
-              principal: BigInt(0), // В первый месяц основной долг не погашается
-              interest: interest,
-              total: interest, // Общий платёж = только проценты
-              remainingPrincipal,
-          };
-      }
-      // Метод для расчета промежуточного платежа
-      calculateIntermediatePayment(i, prevPaymentDate, monthlyPayment, remainingPrincipal) {
-          // Вычисляем дату платежа
-          const paymentDateUnadjusted = toDate(addMonths(this.startDate, i + 1), {
-              timeZone: this.timezone,
-          });
-          // Корректируем только дату платежа, если она попадает на выходной или праздник
-          const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
-          const formattedDate = format(paymentDateAdjusted, "yyyy-MM-dd");
-          // Проценты за текущий месяц
-          const interest = this.calculateInterest(prevPaymentDate, paymentDateUnadjusted, remainingPrincipal);
-          // Основной долг за текущий месяц
-          const principalPayment = BigInt(monthlyPayment) - interest;
-          return {
-              date: formattedDate,
-              dateRaw: paymentDateUnadjusted,
-              principal: principalPayment,
-              interest: interest,
-              total: BigInt(monthlyPayment),
-              remainingPrincipal: remainingPrincipal - principalPayment,
-          };
-      }
-      // Метод для расчета последнего платежа
-      calculateLastPayment(prevPaymentDate, remainingPrincipal) {
-          const paymentDateUnadjusted = toDate(addMonths(prevPaymentDate, 1), {
-              timeZone: this.timezone,
-          });
-          const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
-          const formattedDate = format(paymentDateAdjusted, "yyyy-MM-dd");
-          // Проценты за текущий месяц
-          const interest = this.calculateInterest(prevPaymentDate, paymentDateUnadjusted, remainingPrincipal);
-          return {
-              date: formattedDate,
-              principal: remainingPrincipal,
-              interest,
-              total: remainingPrincipal + interest,
-              remainingPrincipal: BigInt(0),
-          };
-      }
-      calculateInterest(prevPaymentDate, paymentDate, remainingPrincipal) {
-          const prevYear = prevPaymentDate.getFullYear();
-          const currentYear = paymentDate.getFullYear();
-          let interestPayment = BigInt(0);
-          if (prevYear !== currentYear) {
-              // Если перескакиваем на следующий год
-              const lastDayOfPrevYear = new Date(prevYear, 11, 31); // 31 декабря предыдущего года
-              // Количество дней в предыдущем году
-              const daysInYearPrev = isLeapYear(prevPaymentDate) ? 366 : 365;
-              const daysInPrevYear = Math.ceil((lastDayOfPrevYear.getTime() - prevPaymentDate.getTime()) /
-                  (1000 * 60 * 60 * 24));
-              const interestPrevYear = BigInt(Math.round(Number(remainingPrincipal) *
-                  (this.percentRate / 100 / daysInYearPrev) *
-                  daysInPrevYear));
-              // Количество дней в текущем году
-              const daysInYearCurrent = isLeapYear(paymentDate) ? 366 : 365;
-              const daysInCurrentYear = Math.ceil((paymentDate.getTime() - new Date(currentYear, 0, 1).getTime()) /
-                  (1000 * 60 * 60 * 24));
-              const interestCurrentYear = BigInt(Math.round(Number(remainingPrincipal) *
-                  (this.percentRate / 100 / daysInYearCurrent) *
-                  daysInCurrentYear));
-              // Суммируем проценты за оба периода
-              interestPayment = interestPrevYear + interestCurrentYear;
-          }
-          else {
-              // Если в пределах одного года
-              const daysInYear = isLeapYear(prevPaymentDate) ? 366 : 365;
-              const daysInPrevMonth = this.daysInMonth(prevPaymentDate);
-              interestPayment = BigInt(Math.round(Number(remainingPrincipal) *
-                  (this.percentRate / 100 / daysInYear) *
-                  daysInPrevMonth));
-          }
-          return interestPayment;
-      }
+      return interestPayment;
+    }
   }
+
   // @ts-ignore
   window.AnnuityCreditCalculator = AnnuityCreditCalculator;
 
   BigInt.prototype.toJSON = function () {
-      return this.toString();
+    return this.toString();
   };
   // const holidays = [
   //   "2024-01-01",
@@ -3893,5 +4069,4 @@ var calc = (function () {
   // displayResultAsTable(convertedResult);
 
   return AnnuityCreditCalculator;
-
 })();
