@@ -1,0 +1,24 @@
+{
+  "name": "annuityCreditCalculator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ROLLUP_WATCH=true rollup -c --watch --configPlugin @rollup/plugin-typescript",
+    "build": "rollup -c --configPlugin @rollup/plugin-typescript"
+  },
+  "dependencies": {
+    "@rollup/plugin-commonjs": "^28.0.1",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-typescript": "^12.1.1",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "rollup": "^4.28.0",
+    "rollup-plugin-typescript2": "^0.36.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.5.3"
+  },
+  "private": true
+}

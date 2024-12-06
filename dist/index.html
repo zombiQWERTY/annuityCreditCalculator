@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кредитный калькулятор</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, button, select {
+            padding: 8px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            max-width: 600px;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+<h1>Кредитный калькулятор</h1>
+<h2><a href="https://calc.consultant.ru/crd" target="_blank">Ссылка на калькулятор на консультанте</a></h2>
+<form id="calculatorForm">
+    <label for="percentRate">Годовая процентная ставка (%):</label>
+    <input type="number" id="percentRate" required min="0.01" step="0.01">
+
+    <label for="term">Срок кредита (месяцев):</label>
+    <input type="number" id="term" required min="1">
+
+    <label for="creditSize">Сумма кредита (рубли):</label>
+    <input type="number" id="creditSize" required min="1">
+
+    <label for="startDate">Дата начала:</label>
+    <input type="date" id="startDate" required>
+
+    <button type="submit">Рассчитать</button>
+</form>
+
+<div class="results" id="results">
+    <h2>Результаты</h2>
+    <p id="totalResult"></p>
+    <table id="paymentTable">
+        <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Платёж</th>
+            <th>Основной долг</th>
+            <th>Проценты</th>
+            <th>Остаток</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script src="form.js"></script>
+<script src="index.js"></script>
+</body>
+</html>
