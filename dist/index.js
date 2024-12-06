@@ -3560,7 +3560,7 @@ var calc = (function () {
           this.timezone = "Europe/Moscow"; // Часовой пояс Москвы
           const { percentRate, term, creditSize, startDate, holidays = [] } = options;
           this.percentRate = percentRate;
-          this.term = term;
+          this.term = term - 1;
           this.creditSize = creditSize;
           this.startDate = startDate;
           this.holidays = holidays;
