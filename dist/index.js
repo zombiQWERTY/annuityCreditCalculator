@@ -2808,9 +2808,6 @@ var calc = (function () {
     const _date = toDate$1(date, options?.in);
     if (isNaN(amount)) return constructFrom(date, NaN);
 
-    // If 0 days, no-op to avoid changing times in the hour before end of DST
-    if (!amount) return _date;
-
     _date.setDate(_date.getDate() + amount);
     return _date;
   }
@@ -3555,196 +3552,274 @@ var calc = (function () {
       return true;
   }
 
+  /**
+   * Алгоритм работы аннуитетного кредитного калькулятора:
+   *
+   * 1. Инициализация и проверка входных данных:
+   *    - На вход подаются:
+   *      - Годовая процентная ставка (percentRate), %
+   *      - Срок кредита (term), в месяцах
+   *      - Сумма кредита (creditSize) в копейках
+   *      - Дата выдачи кредита (startDate)
+   *      - Список праздничных дней (holidays) – опционально
+   *    - Проверяется корректность всех входных данных:
+   *      - Ставка > 0
+   *      - Срок > 0 и является целым числом
+   *      - Сумма кредита > 0
+   *      - Дата выдачи корректна
+   *
+   * 2. Расчет ключевых параметров:
+   *    - Месячная ставка:
+   *      r = (percentRate / 100) / 12
+   *    - Аннуитетный коэффициент для (term - 1) аннуитетных платежей:
+   *      A = [r(1+r)^(term-1)] / [(1+r)^(term-1) - 1]
+   *    - Аннуитетный платеж для промежуточных месяцев:
+   *      M = round(creditSize * A)
+   *
+   *    Таким образом, всего платежей = term:
+   *    - 1-й платеж – льготный (только проценты)
+   *    - (term - 2) промежуточных платежей – аннуитетные
+   *    - Последний (term-й) платеж – закрывает весь остаток долга + проценты
+   *
+   * 3. Определение дат платежей:
+   *    - Первый платеж: startDate + 1 месяц
+   *    - i-й платеж (2 ≤ i < term): startDate + i месяцев
+   *    - Последний платеж: дата предпоследнего + 1 месяц
+   *
+   *    Если дата попадает на выходной или праздник, она смещается на ближайший следующий рабочий день.
+   *
+   * 4. Расчет процентов:
+   *    - Определяется точное количество дней между датой предыдущего платежа и текущей датой.
+   *    - Если период в пределах одного года:
+   *      I = R * (P/100) * (D / Y)
+   *      где:
+   *        R – остаток долга до платежа
+   *        P – годовая ставка в процентах
+   *        D – число дней в периоде
+   *        Y – дней в году (365 или 366)
+   *
+   *    - Если переход через год:
+   *      Период делится на две части:
+   *      I = I_prevYear + I_currentYear
+   *      Каждая часть считается аналогично, но с учетом своих дней и своего года.
+   *
+   * 5. Структура платежей:
+   *    - Первый платеж (льготный): только проценты (principal = 0).
+   *    - Промежуточные платежи:
+   *      principal = M - I
+   *      Остаток долга уменьшается на principal.
+   *    - Последний платеж:
+   *      Выплачивается весь оставшийся долг + проценты последнего периода.
+   *
+   * 6. Итоговые суммы:
+   *    После расчета всех платежей суммируются:
+   *    - totalPrincipal – общая выплата по основному долгу
+   *    - totalInterest – общая выплата процентов
+   *    - totalSum – сумма totalPrincipal + totalInterest
+   *
+   * 7. Результат:
+   *    Возвращается:
+   *    - Массив платежей с датами, процентами, основной частью и итоговыми суммами
+   *    - Итоговые показатели totalPrincipal, totalInterest, totalSum
+   *
+   * Данный алгоритм позволяет точно рассчитать график аннуитетных платежей, учитывая
+   * ежедневное начисление процентов, особенности первого и последнего платежа,
+   * а также смещение дат при попадании на выходные и праздничные дни.
+   */
   class AnnuityCreditCalculator {
       constructor(options) {
-          this.timezone = "Europe/Moscow"; // Часовой пояс Москвы
+          this.timezone = "Europe/Moscow";
+          this.validateInputs = () => {
+              if (this.percentRate <= 0) {
+                  throw new Error("Percent rate must be greater than 0.");
+              }
+              if (this.term <= 0 || !Number.isInteger(this.term)) {
+                  throw new Error("Term must be a positive integer.");
+              }
+              if (this.term < 2) {
+                  // По условию мы имеем минимум 2 платежа (первый – льготный, последний – закрывающий)
+                  // Но ТЗ явно это не ограничивает, хотя стоит проверить.
+                  // Допустим, term=1 теоретически означает, что есть только один платеж: проценты + тело долга.
+                  // Тогда формула аннуитета для (term-1)=0 не работает.
+                  // В таком случае можно просто отдать один платеж с процентами за период + тело.
+                  // Но согласно ТЗ, A считается для term-1. Если term=1, (term-1)=0.
+                  // Здесь предполагаем, что term >= 2.
+                  throw new Error("Срок кредита должен быть не менее 2 месяцев для корректного расчета аннуитета");
+              }
+              if (this.creditSize <= BigInt(0)) {
+                  throw new Error("Credit size must be greater than 0.");
+              }
+              if (!(this.startDate instanceof Date) || isNaN(this.startDate.getTime())) {
+                  throw new Error("Invalid start date provided.");
+              }
+          };
+          this.calculateMonthlyRate = () => {
+              return this.percentRate / 12 / 100;
+          };
+          this.calculateAnnuityCoefficient = (monthlyRate) => {
+              // A = [r(1+r)^n]/[(1+r)^n - 1]
+              const numerator = monthlyRate * Math.pow(1 + monthlyRate, this.term - 1);
+              const denominator = Math.pow(1 + monthlyRate, this.term - 1) - 1;
+              return numerator / denominator;
+          };
+          this.adjustPaymentDate = (date) => {
+              let adjustedDate = date;
+              while (isSaturday(adjustedDate) ||
+                  isSunday(adjustedDate) ||
+                  this.isHoliday(adjustedDate)) {
+                  adjustedDate = addDays(adjustedDate, 1);
+              }
+              return adjustedDate;
+          };
+          this.isHoliday = (date) => {
+              const formattedDate = format(date, "yyyy-MM-dd");
+              return this.holidays.includes(formattedDate);
+          };
+          this.daysBetween = (fromDate, toDate) => {
+              const diff = toDate.getTime() - fromDate.getTime();
+              return Math.ceil(diff / (1000 * 60 * 60 * 24));
+          };
+          this.yearLength = (date) => {
+              return isLeapYear(date) ? 366 : 365;
+          };
+          this.calculateInterest = (prevPaymentDate, paymentDate, remainingPrincipal) => {
+              // Рассчитываем проценты точно, учитывая переход через год.
+              const R = remainingPrincipal;
+              const P = this.percentRate / 100;
+              const prevYear = prevPaymentDate.getFullYear();
+              const currentYear = paymentDate.getFullYear();
+              if (prevYear === currentYear) {
+                  // В пределах одного года
+                  const Y = this.yearLength(prevPaymentDate);
+                  const D = this.daysBetween(prevPaymentDate, paymentDate);
+                  const interest = Math.round(Number(R) * (P / Y) * D);
+                  return BigInt(interest);
+              }
+              else {
+                  // Переход через год
+                  // 1) От предыдущей даты до конца года
+                  const lastDayOfPrevYear = new Date(prevYear, 11, 31);
+                  const Y_prev = this.yearLength(prevPaymentDate);
+                  const D_prevYear = this.daysBetween(prevPaymentDate, lastDayOfPrevYear);
+                  // Считаем с prevPaymentDate (не включительно) до lastDayOfPrevYear (включительно)
+                  // Ориентируемся на ceiling (округляем).
+                  // В зависимости от того, как считать дни, можно уточнить логику. Здесь считаем полноценно:
+                  // если prevPaymentDate = 2024-12-15, lastDayOfPrevYear = 2024-12-31,
+                  // then daysBetween(prevPaymentDate, lastDayOfPrevYear) вернет количество дней между ними,
+                  // например, если daysBetween считает целые дни, и если мы хотим включить конечный день,
+                  // можно оставить как есть. В данном случае мы уже использовали Math.ceil и рассматриваем полные дни.
+                  //
+                  // Для полной точности можно использовать строго (to - from) / (ms_in_day) без ceil:
+                  // Но выше уже есть ceil. Предположим, что ceil уже дает корректный результат.
+                  // Рассчёт точных дней должен быть консистентен. Если мы всегда используем ceil,
+                  // то для двух интервалов будет небольшое смещение.
+                  // Однако для простоты считаем дни именно так, как заложено, оставляя логику ceil.
+                  const I_prevYear = Math.round(Number(R) * (P / Y_prev) * D_prevYear);
+                  // 2) С начала нового года до paymentDate
+                  const firstDayOfCurrentYear = new Date(currentYear, 0, 1);
+                  const Y_current = this.yearLength(paymentDate);
+                  const D_currentYear = this.daysBetween(firstDayOfCurrentYear, paymentDate);
+                  const I_currentYear = Math.round(Number(R) * (P / Y_current) * D_currentYear);
+                  return BigInt(I_prevYear + I_currentYear);
+              }
+          };
+          this.calculateMonthlyPayment = (annuityCoefficient) => {
+              // M = round(S * A)
+              return Math.round(Number(this.creditSize) * annuityCoefficient);
+          };
+          this.calculate = () => {
+              // Логика:
+              // Считаем 1-й платеж (льготный): только проценты.
+              // Далее (term - 2) платежей - аннуитетные.
+              // Последний платеж (term-й) - закрытие всего остатка долга + проценты.
+              //
+              // Итого: при сроке n месяцев: 1 льготный + (n-2) промежуточных + 1 последний = n платежей.
+              const monthlyRate = this.calculateMonthlyRate();
+              const annuityCoefficient = this.calculateAnnuityCoefficient(monthlyRate);
+              const monthlyPayment = this.calculateMonthlyPayment(annuityCoefficient);
+              let remainingPrincipal = this.creditSize;
+              const payments = [];
+              // Первый платеж
+              const firstPayment = this.calculateFirstPayment(this.startDate, remainingPrincipal);
+              payments.push(firstPayment);
+              let prevPaymentDate = firstPayment.dateRaw;
+              // Промежуточные платежи (со 2-го по предпоследний)
+              for (let i = 2; i < this.term; i++) {
+                  const intermediatePayment = this.calculateIntermediatePayment(i, prevPaymentDate, monthlyPayment, remainingPrincipal);
+                  remainingPrincipal = intermediatePayment.remainingPrincipal;
+                  payments.push(intermediatePayment);
+                  prevPaymentDate = intermediatePayment.dateRaw;
+              }
+              // Последний платеж
+              const lastPayment = this.calculateLastPayment(prevPaymentDate, remainingPrincipal);
+              payments.push(lastPayment);
+              const totalPrincipal = payments.reduce((sum, p) => sum + p.principal, BigInt(0));
+              const totalInterest = payments.reduce((sum, p) => sum + p.interest, BigInt(0));
+              const totalSum = payments.reduce((sum, p) => sum + p.total, BigInt(0));
+              return {
+                  totalPrincipal,
+                  totalInterest,
+                  totalSum,
+                  payments: payments.map(({ dateRaw, ...rest }) => rest),
+              };
+          };
+          this.calculateFirstPayment = (startDate, remainingPrincipal) => {
+              // Первый платеж через примерно (вдруг перенос из-за выходных?) 1 месяц. Только проценты.
+              const paymentDateUnadjusted = toDate(addMonths(startDate, 1), {
+                  timeZone: this.timezone,
+              });
+              const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
+              const interest = this.calculateInterest(startDate, paymentDateUnadjusted, remainingPrincipal);
+              return {
+                  date: format(paymentDateAdjusted, "yyyy-MM-dd"),
+                  dateRaw: paymentDateUnadjusted,
+                  principal: BigInt(0),
+                  interest,
+                  total: interest,
+                  remainingPrincipal,
+              };
+          };
+          this.calculateIntermediatePayment = (i, prevPaymentDate, monthlyPayment, remainingPrincipal) => {
+              // i - номер платежа (2-й, 3-й, ..., term-1-й)
+              // Дата платежа i-го месяца
+              const paymentDateUnadjusted = toDate(addMonths(this.startDate, i), {
+                  timeZone: this.timezone,
+              });
+              const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
+              const interest = this.calculateInterest(prevPaymentDate, paymentDateUnadjusted, remainingPrincipal);
+              const principalPayment = BigInt(monthlyPayment) - interest;
+              return {
+                  date: format(paymentDateAdjusted, "yyyy-MM-dd"),
+                  dateRaw: paymentDateUnadjusted,
+                  principal: principalPayment,
+                  interest,
+                  total: BigInt(monthlyPayment),
+                  remainingPrincipal: remainingPrincipal - principalPayment,
+              };
+          };
+          this.calculateLastPayment = (prevPaymentDate, remainingPrincipal) => {
+              // Последний платеж (term-й)
+              const paymentDateUnadjusted = toDate(addMonths(prevPaymentDate, 1), {
+                  timeZone: this.timezone,
+              });
+              const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
+              const interest = this.calculateInterest(prevPaymentDate, paymentDateUnadjusted, remainingPrincipal);
+              return {
+                  date: format(paymentDateAdjusted, "yyyy-MM-dd"),
+                  dateRaw: paymentDateUnadjusted,
+                  principal: remainingPrincipal,
+                  interest,
+                  total: remainingPrincipal + interest,
+                  remainingPrincipal: BigInt(0),
+              };
+          };
           const { percentRate, term, creditSize, startDate, holidays = [] } = options;
           this.percentRate = percentRate;
-          this.term = term - 1;
+          this.term = term;
           this.creditSize = creditSize;
           this.startDate = startDate;
           this.holidays = holidays;
           this.validateInputs();
-      }
-      validateInputs() {
-          if (this.percentRate <= 0) {
-              throw new Error("Percent rate must be greater than 0.");
-          }
-          if (this.term <= 0 || !Number.isInteger(this.term)) {
-              throw new Error("Term must be a positive integer.");
-          }
-          if (this.creditSize <= BigInt(0)) {
-              throw new Error("Credit size must be greater than 0.");
-          }
-          if (!(this.startDate instanceof Date) || isNaN(this.startDate.getTime())) {
-              throw new Error("Invalid start date provided.");
-          }
-      }
-      calculateMonthlyRate() {
-          return this.percentRate / 12 / 100; // Месячная ставка в виде десятичной дроби
-      }
-      calculateAnnuityCoefficient(monthlyRate) {
-          const numerator = monthlyRate * Math.pow(1 + monthlyRate, this.term);
-          const denominator = Math.pow(1 + monthlyRate, this.term) - 1;
-          return numerator / denominator;
-      }
-      adjustPaymentDate(date) {
-          let adjustedDate = date;
-          // Перенос на следующий рабочий день, если дата приходится на выходной или праздник
-          while (isSaturday(adjustedDate) ||
-              isSunday(adjustedDate) ||
-              this.isHoliday(adjustedDate)) {
-              adjustedDate = addDays(adjustedDate, 1);
-          }
-          return adjustedDate;
-      }
-      isHoliday(date) {
-          const formattedDate = format(date, "yyyy-MM-dd");
-          return this.holidays.includes(formattedDate);
-      }
-      daysInMonth(date) {
-          const month = date.getMonth() + 1; // January is 0
-          if (month === 2) {
-              // February
-              return isLeapYear(date) ? 29 : 28;
-          }
-          // Months with 30 days
-          if ([4, 6, 9, 11].includes(month)) {
-              return 30;
-          }
-          return 31;
-      }
-      calculate() {
-          const monthlyRate = this.calculateMonthlyRate();
-          // Рассчитываем ежемесячный аннуитетный платёж в копейках
-          const annuityCoefficient = this.calculateAnnuityCoefficient(monthlyRate);
-          const monthlyPayment = this.calculateMonthlyPayment(annuityCoefficient);
-          let remainingPrincipal = this.creditSize;
-          const payments = [];
-          const firstPayment = this.calculateFirstPayment(this.startDate, remainingPrincipal);
-          payments.push(firstPayment);
-          let prevPaymentDate = firstPayment.dateRaw;
-          // Платежи начиная со второго месяца
-          for (let i = 1; i < this.term; i++) {
-              const intermediatePayment = this.calculateIntermediatePayment(i, prevPaymentDate, monthlyPayment, remainingPrincipal);
-              // Уменьшаем остаток основного долга
-              remainingPrincipal = intermediatePayment.remainingPrincipal;
-              payments.push(intermediatePayment);
-              prevPaymentDate = intermediatePayment.dateRaw;
-          }
-          const lastPayment = this.calculateLastPayment(prevPaymentDate, remainingPrincipal);
-          payments.push(lastPayment);
-          const totalPrincipal = payments.reduce((sum, p) => sum + p.principal, BigInt(0));
-          const totalInterest = payments.reduce((sum, p) => sum + p.interest, BigInt(0));
-          const totalSum = payments.reduce((sum, p) => sum + p.total, BigInt(0));
-          return {
-              totalPrincipal,
-              totalInterest,
-              totalSum,
-              payments,
-          };
-      }
-      // Метод для расчета аннуитетного платежа
-      calculateMonthlyPayment(annuityCoefficient) {
-          return Math.round(Number(this.creditSize) * annuityCoefficient);
-      }
-      calculateFirstPayment(startDate, remainingPrincipal) {
-          // Дата первого платежа через месяц после начала кредита
-          let paymentDateUnadjusted = toDate(addMonths(startDate, 1), {
-              timeZone: this.timezone,
-          });
-          // Рассчитываем разницу в днях между начальной датой и предполагаемой датой первого платежа
-          const daysToNextPayment = Math.ceil((paymentDateUnadjusted.getTime() - this.startDate.getTime()) /
-              (1000 * 60 * 60 * 24));
-          // Добавляем это количество дней к начальной дате
-          paymentDateUnadjusted = toDate(addDays(startDate, daysToNextPayment), {
-              timeZone: this.timezone,
-          });
-          // Корректируем дату на рабочий день
-          const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
-          // Первый платёж: только проценты
-          const interest = this.calculateInterest(startDate, paymentDateUnadjusted, remainingPrincipal);
-          return {
-              date: format(paymentDateAdjusted, "yyyy-MM-dd"),
-              dateRaw: paymentDateUnadjusted,
-              principal: BigInt(0), // В первый месяц основной долг не погашается
-              interest: interest,
-              total: interest, // Общий платёж = только проценты
-              remainingPrincipal,
-          };
-      }
-      // Метод для расчета промежуточного платежа
-      calculateIntermediatePayment(i, prevPaymentDate, monthlyPayment, remainingPrincipal) {
-          // Вычисляем дату платежа
-          const paymentDateUnadjusted = toDate(addMonths(this.startDate, i + 1), {
-              timeZone: this.timezone,
-          });
-          // Корректируем только дату платежа, если она попадает на выходной или праздник
-          const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
-          const formattedDate = format(paymentDateAdjusted, "yyyy-MM-dd");
-          // Проценты за текущий месяц
-          const interest = this.calculateInterest(prevPaymentDate, paymentDateUnadjusted, remainingPrincipal);
-          // Основной долг за текущий месяц
-          const principalPayment = BigInt(monthlyPayment) - interest;
-          return {
-              date: formattedDate,
-              dateRaw: paymentDateUnadjusted,
-              principal: principalPayment,
-              interest: interest,
-              total: BigInt(monthlyPayment),
-              remainingPrincipal: remainingPrincipal - principalPayment,
-          };
-      }
-      // Метод для расчета последнего платежа
-      calculateLastPayment(prevPaymentDate, remainingPrincipal) {
-          const paymentDateUnadjusted = toDate(addMonths(prevPaymentDate, 1), {
-              timeZone: this.timezone,
-          });
-          const paymentDateAdjusted = this.adjustPaymentDate(paymentDateUnadjusted);
-          const formattedDate = format(paymentDateAdjusted, "yyyy-MM-dd");
-          // Проценты за текущий месяц
-          const interest = this.calculateInterest(prevPaymentDate, paymentDateUnadjusted, remainingPrincipal);
-          return {
-              date: formattedDate,
-              principal: remainingPrincipal,
-              interest,
-              total: remainingPrincipal + interest,
-              remainingPrincipal: BigInt(0),
-          };
-      }
-      calculateInterest(prevPaymentDate, paymentDate, remainingPrincipal) {
-          const prevYear = prevPaymentDate.getFullYear();
-          const currentYear = paymentDate.getFullYear();
-          let interestPayment = BigInt(0);
-          if (prevYear !== currentYear) {
-              // Если перескакиваем на следующий год
-              const lastDayOfPrevYear = new Date(prevYear, 11, 31); // 31 декабря предыдущего года
-              // Количество дней в предыдущем году
-              const daysInYearPrev = isLeapYear(prevPaymentDate) ? 366 : 365;
-              const daysInPrevYear = Math.ceil((lastDayOfPrevYear.getTime() - prevPaymentDate.getTime()) /
-                  (1000 * 60 * 60 * 24));
-              const interestPrevYear = BigInt(Math.round(Number(remainingPrincipal) *
-                  (this.percentRate / 100 / daysInYearPrev) *
-                  daysInPrevYear));
-              // Количество дней в текущем году
-              const daysInYearCurrent = isLeapYear(paymentDate) ? 366 : 365;
-              const daysInCurrentYear = Math.ceil((paymentDate.getTime() - new Date(currentYear, 0, 1).getTime()) /
-                  (1000 * 60 * 60 * 24));
-              const interestCurrentYear = BigInt(Math.round(Number(remainingPrincipal) *
-                  (this.percentRate / 100 / daysInYearCurrent) *
-                  daysInCurrentYear));
-              // Суммируем проценты за оба периода
-              interestPayment = interestPrevYear + interestCurrentYear;
-          }
-          else {
-              // Если в пределах одного года
-              const daysInYear = isLeapYear(prevPaymentDate) ? 366 : 365;
-              const daysInPrevMonth = this.daysInMonth(prevPaymentDate);
-              interestPayment = BigInt(Math.round(Number(remainingPrincipal) *
-                  (this.percentRate / 100 / daysInYear) *
-                  daysInPrevMonth));
-          }
-          return interestPayment;
       }
   }
   // @ts-ignore

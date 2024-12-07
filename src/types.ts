@@ -1,25 +1,3 @@
-export interface Payment {
-  date: string; // Дата платежа в формате ISO
-  principal: bigint; // Основной долг в копейках
-  interest: bigint; // Проценты в копейках
-  total: bigint; // Общая сумма платежа в копейках
-  remainingPrincipal: bigint; // Остаток основного долга в копейках
-}
-
-export interface CreditResult {
-  totalPrincipal: bigint; // Общая сумма основного долга в копейках
-  totalInterest: bigint; // Общая сумма процентов в копейках
-  totalSum: bigint; // Общая сумма выплат в копейках
-  payments: Payment[]; // Детализация платежей
-}
-
-export interface CreditOptions {
-  percentRate: number; // Годовая процентная ставка
-  term: number; // Срок кредита в месяцах
-  creditSize: bigint; // Сумма кредита в копейках
-  startDate: Date; // Начальная дата
-}
-
 export interface ConvertedCreditResult {
   totalPrincipal: string; // Общая сумма основного долга в рублях
   totalInterest: string; // Общая сумма процентов в рублях
@@ -31,4 +9,26 @@ export interface ConvertedCreditResult {
     total: string; // Общая сумма платежа в рублях
     remainingPrincipal: string; // Остаток основного долга в рублях
   }[];
+}
+
+export interface CreditOptions {
+  percentRate: number; // годовая процентная ставка в процентах (например, 10 означает 10%)
+  term: number; // срок кредита в месяцах (например, 12)
+  creditSize: bigint; // сумма кредита в копейках
+  startDate: Date; // дата выдачи кредита
+}
+
+export interface Payment {
+  date: string; // дата платежа в формате YYYY-MM-DD
+  principal: bigint; // сумма погашения основного долга за период
+  interest: bigint; // сумма процентов за период
+  total: bigint; // итоговая сумма платежа (principal + interest)
+  remainingPrincipal: bigint; // остаток основного долга после платежа
+}
+
+export interface CreditResult {
+  totalPrincipal: bigint; // общая сумма погашения основного долга
+  totalInterest: bigint; // общая сумма уплаченных процентов
+  totalSum: bigint; // общая сумма уплаченных средств (основной долг + проценты)
+  payments: Payment[]; // массив платежей
 }

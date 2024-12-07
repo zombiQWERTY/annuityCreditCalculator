@@ -140,7 +140,7 @@ document
     };
 
     try {
-      const calculator = new window.AnnuityCreditCalculator({
+      const calculator = new window.calc({
         ...options,
         holidays,
       });
